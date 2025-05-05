@@ -7,6 +7,3 @@ class Seller(AbstractUser):
 
     def __str__(self):
         return f"{self.username} - {self.credit} A"
-
-
-# Create your models here.

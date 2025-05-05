@@ -17,5 +17,3 @@ class SellerProfileView(APIView):
     def get(self, request):
         serializer = SellerProfileSerializer(request.user)
         return Response(serializer.data)
-
-# Create your views here.
