@@ -1,0 +1,16 @@
+# Ignore Python cache
+__pycache__/
+*.py[cod]
+*.sqlite3
+
+# Ignore virtualenv
+venv/
+
+# Ignore environment variables
+.env
+
+# Ignore macOS junk
+.DS_Store
+
+# Ignore VSCode settings
+.vscode/
