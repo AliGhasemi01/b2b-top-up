@@ -2,6 +2,9 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from sellers.models import Seller
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 class CreditRequest(models.Model):
     STATUS_CHOICES = [
@@ -22,13 +25,13 @@ class CreditRequest(models.Model):
     def save(self, *args, **kwargs):
         if self.pk:
             old = CreditRequest.objects.get(pk=self.pk)
-            if old.status == 'PENDING' and self.status == 'APPROVED':
+            if old.status == 'PENDING' and self.status == 'APPROVED' and self.processed_at is None:
                 with transaction.atomic():
                     seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
                     seller.credit += self.amount
                     seller.save()
                 self.processed_at = timezone.now()
-            elif old.status == 'PENDING' and self.status == 'REJECTED':
+            elif old.status == 'PENDING' and self.status == 'REJECTED' and self.processed_at is None:
                 self.processed_at = timezone.now()
         super().save(*args, **kwargs)
         
@@ -60,6 +63,8 @@ class TopUpRequest(models.Model):
             
             locked_seller.credit -= amount
             locked_seller.save()
+            
+            logger.info(f"[TopUpRequest] Seller: {seller.username} | Phone: {phone_number} | Amount: {amount} | Remaining Credit: {seller.credit}")
             
             return cls.objects.create(
                 seller=locked_seller,

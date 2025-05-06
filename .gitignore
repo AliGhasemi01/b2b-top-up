@@ -12,5 +12,9 @@ venv/
 # Ignore macOS junk
 .DS_Store
 
+# Logs
+*.log
+topup_logs.log
+
 # Ignore VSCode settings
 .vscode/
