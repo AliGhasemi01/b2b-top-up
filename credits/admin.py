@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import CreditRequest, TopUpRequest
+from django.core.exceptions import ValidationError
 
 @admin.register(CreditRequest)
 class CreditRequestAdmin(admin.ModelAdmin):
@@ -14,7 +15,6 @@ class CreditRequestAdmin(admin.ModelAdmin):
     def approve_requests(self, request, queryset):
         for credit_request in queryset:
             try:
-                credit_request : CreditRequest
                 credit_request.approve()
                 self.message_user(request, "Selected requests approved successfully.")
 
@@ -25,7 +25,6 @@ class CreditRequestAdmin(admin.ModelAdmin):
     def reject_requests(self, request, queryset):
         for credit_request in queryset:
             try:
-                credit_request : CreditRequest
                 credit_request.reject()
                 self.message_user(request, "Selected requests rejected successfully.")
             except Exception as e:
@@ -39,3 +38,11 @@ class TopUpRequestAdmin(admin.ModelAdmin):
     search_fields = ('seller__username', 'phone_number')
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
+    
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        try:
+            obj.process_payment()
+        except ValidationError as e:
+            self.message_user(request, f"Error processing payment: {str(e)}", level='error')
+            obj.delete()

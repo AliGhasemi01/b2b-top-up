@@ -6,11 +6,12 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class Status(models.IntegerChoices):
+    PENDING = 0, 'Pending'
+    APPROVED = 1, 'Approved'
+    REJECTED = 2, 'Rejected'
+
 class CreditRequest(models.Model):
-    class Status(models.IntegerChoices):
-        PENDING = 0, 'Pending'
-        APPROVED = 1, 'Approved'
-        REJECTED = 2, 'Rejected'
     
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='credit_requests')
     amount = models.DecimalField(max_digits=16, decimal_places=4)
@@ -26,14 +27,14 @@ class CreditRequest(models.Model):
         try:
             with transaction.atomic():
                 request = CreditRequest.objects.select_for_update().get(pk=self.pk)
-                if request.status != CreditRequest.Status.PENDING:
+                if request.status != Status.PENDING:
                     raise ValidationError("Cannot approve a non-pending request.")
                 
                 seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
                 seller.credit += self.amount
                 seller.save(update_fields=['credit'])
                 
-                request.status = CreditRequest.Status.APPROVED
+                request.status = Status.APPROVED
                 request.processed_at = timezone.now()
                 request.save(update_fields=['status', 'processed_at'])
         except ValidationError as e:

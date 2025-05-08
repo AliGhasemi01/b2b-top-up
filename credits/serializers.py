@@ -25,7 +25,7 @@ class TopUpRequestSerializer(serializers.ModelSerializer):
         return value
     
     def create(self, validated_data):
-        seller = self.context['request'].user.seller
+        seller = self.context['request'].user
         
         top_up_request = TopUpRequest.objects.create(
             seller=seller,

@@ -1,7 +1,8 @@
 from django.test import TestCase
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from credits.models import CreditRequest, TopUpRequest
+from credits.models import CreditRequest, Status
+
 
 User = get_user_model()
 
@@ -15,7 +16,7 @@ class CreditRequestTests(TestCase):
             CreditRequest.objects.create(
                 seller=self.seller1,
                 amount=10000,
-                status='APPROVED',
+                status=Status.APPROVED,
                 processed_at=timezone.now()
             )
             self.seller1.credit += 10000

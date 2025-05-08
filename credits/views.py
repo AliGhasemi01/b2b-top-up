@@ -16,14 +16,14 @@ from django.shortcuts import get_object_or_404
 class CreditRequestView(APIView):
     permission_classes = [IsAuthenticated]
     
-    def post(self, request, format=None):
+    def post(self, request):
         serializer = CreditRequestSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(seller=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def get(self, request, format=None):
+    def get(self, request):
         credit_requests = CreditRequest.objects.filter(seller=request.user).order_by('-created_at')
         
         serializer = CreditRequestSerializer(credit_requests, many=True)
@@ -33,7 +33,7 @@ class CreditRequestView(APIView):
 class TopUpRequestView(APIView):
     permission_classes = [IsAuthenticated]
     
-    def post(self, request, format=None):
+    def post(self, request):
         serializer = TopUpRequestSerializer(data=request.data, context={'request': request})
         
         if serializer.is_valid():
@@ -45,7 +45,7 @@ class TopUpRequestView(APIView):
                 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    def get(self, request, format=None):
+    def get(self, request):
         top_up_requests = TopUpRequest.objects.filter(seller=request.user).order_by('-created_at')
         
         serializer = TopUpRequestSerializer(top_up_requests, many=True)
