@@ -1,9 +1,7 @@
 from django.urls import path
-from .views import CreditRequestCreateView, CreditRequestListView, TopUpRequestCreateView, TopUpRequestListView
+from .views import CreditRequestView, TopUpRequestView
 
 urlpatterns = [
-    path('credit-request/', CreditRequestCreateView.as_view(), name='credit-request'),
-    path('my-credit-requests/', CreditRequestListView.as_view(), name='my-credit-requests'),
-    path('topup/', TopUpRequestCreateView.as_view(), name='topup-request'),
-    path('my-topup-request/', TopUpRequestListView.as_view(), name='my-topup-requests'),
+    path('credit-requests/', CreditRequestView.as_view(), name='credit-requests'),
+    path('top-ups/', TopUpRequestView.as_view(), name='top-ups'),
 ]
