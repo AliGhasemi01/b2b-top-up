@@ -2,6 +2,7 @@ from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from sellers.models import Seller
 from django.utils import timezone
+from django.db.models import F
 import logging
 
 logger = logging.getLogger(__name__)
@@ -72,27 +73,74 @@ class TopUpRequest(models.Model):
     def __str__(self):
         return f"{self.seller.username} → {self.phone_number} ({self.amount})"
     
+    # def process_payment(self):
+    #     try:
+    #         with transaction.atomic():
+    #             locked_seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
+    #             locked_phone_number = PhoneNumber.objects.select_for_update().get(pk=self.phone_number.pk)
+
+    #             if locked_seller != locked_phone_number.seller:
+    #                 raise ValidationError("This phone number does not belong to this user.")
+
+    #             if locked_seller.credit < self.amount:
+    #                 raise ValidationError("Insufficient credit.")
+                
+    #             locked_seller.credit -= self.amount
+    #             locked_seller.save(update_fields=['credit'])
+                
+    #             locked_phone_number.total_topup += self.amount
+    #             locked_phone_number.save(update_fields=['total_topup'])
+                
+    #             #logger.info(f"[TopUpRequest] Seller: {self.seller.username} | Phone: {self.phone_number} | Amount: {self.amount} | Remaining Credit: {locked_seller.credit}")
+    #             return True
+    #     except ValidationError as e:
+    #         logger.error(f"[TopUpRequest] Validation Error: {str(e)}")
+    #         raise Exception(f"Error processing payment: {str(e)}")
+    
+    
+    # process_payment without locked_phone_number
     def process_payment(self):
         try:
             with transaction.atomic():
-                locked_seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
-                locked_phone_number = PhoneNumber.objects.select_for_update().get(pk=self.phone_number.pk)
+                seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
 
-                if locked_seller != locked_phone_number.seller:
-                    raise ValidationError("This phone number does not belong to this user.")
-
-                if locked_seller.credit < self.amount:
+                if seller.credit < self.amount:
                     raise ValidationError("Insufficient credit.")
+
+                seller.credit -= self.amount
+                seller.save(update_fields=['credit'])
+
+                PhoneNumber.objects.filter(pk=self.phone_number.pk).update(total_topup=F('total_topup') + self.amount)
                 
-                locked_seller.credit -= self.amount
-                locked_seller.save(update_fields=['credit'])
-                
-                locked_phone_number.total_topup += self.amount
-                locked_phone_number.save(update_fields=['total_topup'])
-                
-                logger.info(f"[TopUpRequest] Seller: {self.seller.username} | Phone: {self.phone_number} | Amount: {self.amount} | Remaining Credit: {locked_seller.credit}")
+                logger.info(f"[TopUpRequest] Seller: {self.seller.username} | Phone: {self.phone_number} | Amount: {self.amount} | Remaining Credit: {seller.credit}")
                 return True
+
         except ValidationError as e:
             logger.error(f"[TopUpRequest] Validation Error: {str(e)}")
             raise Exception(f"Error processing payment: {str(e)}")
+    
+    # process_payment method without transaction.atomic
+    
+    # def process_payment(self):
+    #     try:
+    #         seller = Seller.objects.get(pk=self.seller.pk)
+    #         phone_number = PhoneNumber.objects.get(pk=self.phone_number.pk)
+
+    #         if seller != phone_number.seller:
+    #             raise ValidationError("This phone number does not belong to this user.")
+
+    #         if seller.credit < self.amount:
+    #             raise ValidationError("Insufficient credit.")
+            
+    #         seller.credit -= self.amount
+    #         seller.save(update_fields=['credit'])
+            
+    #         seller.total_topup += self.amount
+    #         seller.save(update_fields=['total_topup'])
+            
+    #         logger.info(f"[TopUpRequest] Seller: {self.seller.username} | Phone: {self.phone_number} | Amount: {self.amount} | Remaining Credit: {locked_seller.credit}")
+    #         return True
+    #     except ValidationError as e:
+    #         logger.error(f"[TopUpRequest] Validation Error: {str(e)}")
+    #         raise Exception(f"Error processing payment: {str(e)}")
         
