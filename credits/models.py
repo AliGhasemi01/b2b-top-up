@@ -45,9 +45,9 @@ class CreditRequest(models.Model):
         try:
             with transaction.atomic():
                 request = CreditRequest.objects.select_for_update().get(pk=self.pk)
-                if request.status != CreditRequest.Status.PENDING:
+                if request.status != Status.PENDING:
                     raise ValidationError("Cannot reject a non-pending request.")
-                request.status = CreditRequest.Status.REJECTED.value
+                request.status = Status.REJECTED.value
                 request.processed_at = timezone.now()
                 request.save(update_fields=['status', 'processed_at'])
         except ValidationError as e:
