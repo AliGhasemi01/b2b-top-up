@@ -10,6 +10,15 @@ class Status(models.IntegerChoices):
     PENDING = 0, 'Pending'
     APPROVED = 1, 'Approved'
     REJECTED = 2, 'Rejected'
+    
+class PhoneNumber(models.Model):
+    seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='phone_numbers')
+    number = models.CharField(max_length=15, unique=True)
+    total_topup = models.DecimalField(max_digits=16, decimal_places=4, default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.number
 
 class CreditRequest(models.Model):
     
@@ -56,7 +65,7 @@ class CreditRequest(models.Model):
         
 class TopUpRequest(models.Model):
     seller = models.ForeignKey(Seller, on_delete=models.CASCADE, related_name='topup_requests')
-    phone_number = models.CharField(max_length=15)
+    phone_number = models.ForeignKey(PhoneNumber, on_delete=models.CASCADE, related_name='topup_requests')
     amount = models.DecimalField(max_digits=16, decimal_places=4)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -67,12 +76,23 @@ class TopUpRequest(models.Model):
         try:
             with transaction.atomic():
                 locked_seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
+                locked_phone_number = PhoneNumber.objects.select_for_update().get(pk=self.phone_number.pk)
+
+                if locked_seller != locked_phone_number.seller:
+                    raise ValidationError("This phone number does not belong to this user.")
+
                 if locked_seller.credit < self.amount:
                     raise ValidationError("Insufficient credit.")
+                
                 locked_seller.credit -= self.amount
                 locked_seller.save(update_fields=['credit'])
+                
+                locked_phone_number.total_topup += self.amount
+                locked_phone_number.save(update_fields=['total_topup'])
+                
                 logger.info(f"[TopUpRequest] Seller: {self.seller.username} | Phone: {self.phone_number} | Amount: {self.amount} | Remaining Credit: {locked_seller.credit}")
                 return True
         except ValidationError as e:
             logger.error(f"[TopUpRequest] Validation Error: {str(e)}")
             raise Exception(f"Error processing payment: {str(e)}")
+        

@@ -9,7 +9,7 @@ class SellerSignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Seller
-        fields = ['username', 'email', 'company_name', 'password', 'password2']
+        fields = ['username', 'email', 'password', 'password2']
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -24,4 +24,4 @@ class SellerSignupSerializer(serializers.ModelSerializer):
 class SellerProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seller
-        fields = ['id', 'username', 'email', 'credit', 'company_name']
+        fields = ['id', 'username', 'email', 'credit']

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CreditRequest, TopUpRequest
+from .models import CreditRequest, TopUpRequest, PhoneNumber
 from django.core.exceptions import ValidationError
 
 @admin.register(CreditRequest)
@@ -35,7 +35,7 @@ class CreditRequestAdmin(admin.ModelAdmin):
 class TopUpRequestAdmin(admin.ModelAdmin):
     list_display = ('id', 'seller', 'phone_number', 'amount', 'created_at')
     list_filter = ('created_at',)
-    search_fields = ('seller__username', 'phone_number')
+    search_fields = ('seller__username', 'amount')
     ordering = ('-created_at',)
     readonly_fields = ('created_at',)
     
@@ -46,3 +46,12 @@ class TopUpRequestAdmin(admin.ModelAdmin):
         except ValidationError as e:
             self.message_user(request, f"Error processing payment: {str(e)}", level='error')
             obj.delete()
+            
+@admin.register(PhoneNumber)
+class PhoneNumberAdmin(admin.ModelAdmin):
+    list_display = ('id', 'number','seller', 'total_topup', 'created_at')
+    list_filter = ('created_at',)
+    search_fields = ('number',)
+    ordering = ('-created_at',)
+    readonly_fields = ('total_topup', 'created_at', 'seller')
+    

@@ -3,8 +3,8 @@ from django.core.exceptions import ValidationError
 from rest_framework.generics import CreateAPIView, ListAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import CreditRequest, TopUpRequest
-from .serializers import CreditRequestSerializer, TopUpRequestSerializer
+from .models import CreditRequest, TopUpRequest, PhoneNumber
+from .serializers import CreditRequestSerializer, TopUpRequestSerializer, PhoneNumberSerializer
 from rest_framework.status import HTTP_400_BAD_REQUEST
 
 from rest_framework.views import APIView
@@ -49,4 +49,25 @@ class TopUpRequestView(APIView):
         top_up_requests = TopUpRequest.objects.filter(seller=request.user).order_by('-created_at')
         
         serializer = TopUpRequestSerializer(top_up_requests, many=True)
+        return Response(serializer.data)
+    
+class PhoneNumberRequestView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        serializer = PhoneNumberSerializer(data=request.data, context={'request': request})
+        
+        if serializer.is_valid():
+            try:
+                serializer.save(seller=request.user)
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            except ValidationError as e:
+                return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    def get(self, request):
+        phone_number_requests = PhoneNumber.objects.filter(seller=request.user).order_by('-created_at')
+        
+        serializer = PhoneNumberSerializer(phone_number_requests, many=True)
         return Response(serializer.data)

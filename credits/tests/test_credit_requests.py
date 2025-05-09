@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.utils import timezone
 from django.contrib.auth import get_user_model
-from credits.models import CreditRequest, TopUpRequest
+from credits.models import CreditRequest, TopUpRequest, PhoneNumber
 from rest_framework.exceptions import ValidationError
 
 
@@ -44,6 +44,7 @@ class CreditRequestTests(TestCase):
 class topup_request_tests(TestCase):
     def setUp(self):
         self.seller = User.objects.create_user(username='testuser', password='testpass')
+        self.phone_number = PhoneNumber.objects.create(seller=self.seller, number='09121234567')
         self.seller.credit = 50000
         self.seller.save()
 
@@ -52,7 +53,7 @@ class topup_request_tests(TestCase):
         for i in range(1, 1001):
             topup_request = TopUpRequest.objects.create(
                 seller=self.seller,
-                phone_number='09121234567',
+                phone_number=self.phone_number,
                 amount=50
             )
             topup_request.process_payment()
@@ -63,7 +64,7 @@ class topup_request_tests(TestCase):
     def test_failed_topup_request_does_not_reduce_credit(self):
         topup_request = TopUpRequest.objects.create(
             seller=self.seller,
-            phone_number='09121234567',
+            phone_number=self.phone_number,
             amount=100000
         )
         with self.assertRaises(Exception):
@@ -71,3 +72,14 @@ class topup_request_tests(TestCase):
             
         self.seller.refresh_from_db()
         self.assertEqual(self.seller.credit, 50000)
+        
+    def test_phone_number_belongs_to_seller(self):
+        other_seller = User.objects.create_user(username='otheruser', password='testpass')
+        other_phone_number = PhoneNumber.objects.create(seller=other_seller, number='09909099090')
+        
+        topup_request = TopUpRequest(seller=self.seller, phone_number=other_phone_number, amount=50)
+        
+        with self.assertRaises(Exception):
+            topup_request.process_payment()
+            
+    
