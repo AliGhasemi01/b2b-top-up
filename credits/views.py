@@ -1,18 +1,14 @@
 from django.shortcuts import render
 from django.core.exceptions import ValidationError
-from rest_framework.generics import CreateAPIView, ListAPIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from .models import CreditRequest, TopUpRequest, PhoneNumber
-from .serializers import CreditRequestSerializer, TopUpRequestSerializer, PhoneNumberSerializer
-from rest_framework.status import HTTP_400_BAD_REQUEST
-import logging
-
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from django.shortcuts import get_object_or_404
+
+from .models import CreditRequest, TopUpRequest, PhoneNumber
+from .serializers import CreditRequestSerializer, TopUpRequestSerializer, PhoneNumberSerializer
+
+import logging
 
 logger = logging.getLogger(__name__)
 

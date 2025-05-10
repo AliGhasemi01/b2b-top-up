@@ -103,14 +103,19 @@ class TopUpRequest(models.Model):
         try:
             with transaction.atomic():
                 seller = Seller.objects.select_for_update().get(pk=self.seller.pk)
+                phone_number = PhoneNumber.objects.get(pk=self.phone_number.pk)
 
                 if seller.credit < self.amount:
                     raise ValidationError("Insufficient credit.")
+                
+                if seller != phone_number.seller:
+                    raise ValidationError("This phone number does not belong to this user.")
 
                 seller.credit -= self.amount
                 seller.save(update_fields=['credit'])
 
-                PhoneNumber.objects.filter(pk=self.phone_number.pk).update(total_topup=F('total_topup') + self.amount)
+                #PhoneNumber.objects.filter(pk=self.phone_number.pk).update(total_topup=F('total_topup') + self.amount)
+                PhoneNumber.objects.filter(pk=phone_number.pk).update(total_topup=F('total_topup') + self.amount)
                 
                 logger.info(f"[TopUpRequest] Seller: {self.seller.username} | Phone: {self.phone_number} | Amount: {self.amount} | Remaining Credit: {seller.credit}")
                 return True
