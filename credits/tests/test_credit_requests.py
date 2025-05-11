@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from credits.models import CreditRequest, TopUpRequest, PhoneNumber
 from rest_framework.exceptions import ValidationError
 
-
 User = get_user_model()
 
 class CreditRequestTests(TestCase):
